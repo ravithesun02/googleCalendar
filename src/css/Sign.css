@@ -1,0 +1,10 @@
+.main{
+    background: linear-gradient(to bottom, #abbaab, #ffffff);
+    height: 57.5vh;
+}
+.syncbtn{
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100%;
+}

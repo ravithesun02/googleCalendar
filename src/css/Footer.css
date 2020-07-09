@@ -1,0 +1,22 @@
+.bg-img{
+    background-image: url('/assests/footer.png');
+    background-repeat: no-repeat;
+    background-size: cover;
+    color: white;
+    
+}
+
+.list-items{
+    margin-top: 3%;
+}
+
+.social{
+    display: flex;
+    align-items: flex-end;
+    border-left: 2px solid white;
+    flex-direction: column;
+    justify-content: flex-end;
+}
+.copyright{
+    margin-top: 3rem !important;
+}

@@ -3,6 +3,7 @@ import './App.css';
 import Header from './components/HeaderComponent';
 import Footer from './components/FooterComponent';
 import SignIn from './components/SignInComponent';
+import EventCalendar from './components/CalendarComponent';
 
 class App extends React.Component{
 
@@ -10,7 +11,7 @@ class App extends React.Component{
     return (
       <>
       <Header/>
-      <SignIn/>
+      <EventCalendar/>
       <Footer/>
       </>
     )

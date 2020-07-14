@@ -6,6 +6,8 @@ import 'react-day-picker/lib/style.css';
 import '../css/Event.css';
 import { Card, CardBody, Button, Popover,ButtonGroup, Badge, Table } from 'reactstrap';
 import TimePicker from 'react-time-picker';
+import Secret from '../config.json';
+import '../css/Sign.css';
 function getWeekDays(weekStart) {
     const days = [weekStart];
     for (let i = 1; i < 7; i += 1) {
@@ -87,20 +89,168 @@ class EventCalendar extends Component{
         selectedDays: getWeekDays(getWeekRange(new Date()).from),
         showCalendar:false,
         daysStartTime:'10:30',
-        daysEndTime:'07:30',
+        daysEndTime:'19:30',
         endStartTime:'11:30',
-        endEndTime:'07:30',
+        endEndTime:'19:30',
         daysEnabled:true,
         endEnabled:false,
-        utc:'GMT+2'
+        utc:'GMT+2',
+        isLoggedIn:false,
+        eventArray:[]
       };
 
-      componentDidMount()
+      insertGapi()
+   {
+       const script=document.createElement('script');
+       script.src="https://apis.google.com/js/api.js";
+       script.onload=()=>{
+
+        this.initializeGoogleSignIn();
+
+       }
+       document.body.appendChild(script);
+   }
+
+   initializeGoogleSignIn()
+   {
+       window.gapi.load('client:auth2',()=>{
+        window.gapi.client.init({
+            apiKey:Secret.apiKey,
+            clientId:Secret.clientId,
+            discoveryDocs:Secret.discoveryDocs,
+            scope:Secret.scope
+        }).then(()=>{
+            window.gapi.auth2.getAuthInstance().isSignedIn.listen(this.updateSigninStatus);
+            this.updateSigninStatus(window.gapi.auth2.getAuthInstance().isSignedIn.get());
+            // document.getElementById('sign').onclick=this.handleAuthClick();
+            console.log('dd');
+        },(error)=>{
+         console.log(error);
+        })
+        .catch((error)=>{
+            console.log(error);
+        })
+    });
+   }
+
+   updateSigninStatus=(isSignedIn)=>{
+       if(isSignedIn)
+       {
+           console.log(isSignedIn);
+           console.log(window.gapi);
+           let date=new Date(this.state.selectedDays[6]);
+
+           console.log(moment(date.setDate(date.getDate()+1)).format());
+
+           this.setState({isLoggedIn:true});
+
+           this.createEventArray();
+       }
+       else
+       {
+
+       }
+   }
+
+   handleAuthClick(){
+       window.gapi.auth2.getAuthInstance().signIn();
+   }
+
+    
+
+     async componentDidMount()
       {
-        console.log(this.state.selectedDays[0].toString().split(' '));
+
+       await this.insertGapi();
+       // console.log(this.state.selectedDays);
         this.setState({
           utc:this.state.selectedDays.toString().split(' ')[5]
-        })
+        });
+
+        console.log(new Date(TimeText[0]).getTime());
+      }
+
+      componentDidUpdate(prevProps,prevState){
+       // console.log(prevState);
+        if(this.state.selectedDays!== prevState.selectedDays || this.state.daysEnabled!==prevState.daysEnabled || this.state.endEnabled!== prevState.endEnabled)
+        {
+            this.createEventArray();
+        }
+      }
+
+
+
+
+      handleEvents=async (minDate,maxDate)=>{
+      let response=await  window.gapi.client.calendar.events.list({
+          'calendarId':'primary',
+          'timeMin':minDate,
+          'timeMax':maxDate,
+          'showDeleted': false,
+         'singleEvents': true,
+         'maxResults': 12,
+         'orderBy': 'startTime'
+      });
+
+      console.log(response);
+      if(response.status===200)
+      {
+        console.log(response.result.items);
+        return response.result.items;
+      }
+      }
+
+      createEventArray=async()=>{
+
+        let start=0;
+        let end=6;
+        let temp=-1;
+        let data=[];
+        if(this.state.daysEnabled && ! this.state.endEnabled)
+        {
+          start=1;
+          end=5;
+        }
+        else if(this.state.endEnabled && !this.state.daysEnabled)
+        {
+          temp=1;
+          start=0;
+          end=6;
+        }
+        else if(!this.state.daysEnabled && !this.state.endEnabled)
+          {
+            this.setState({
+              eventArray:[]
+            });
+            return;
+          }
+        if(temp===-1)
+        {
+            for(let i=start;i<=end;i++)
+            {
+              let date=new Date(this.state.selectedDays[i]);
+              data.push(await this.handleEvents(date.toISOString(),moment(date.setDate(date.getDate()+1)).format()));
+              
+            }
+
+            console.log(data);
+        }
+        else
+        {
+          let date=new Date(this.state.selectedDays[start]);
+              data.push(await this.handleEvents(date.toISOString(),moment(date.setDate(date.getDate()+1)).format()));
+          let date1=new Date(this.state.selectedDays[end]);
+          data.push(await this.handleEvents(date1.toISOString(),moment(date1.setDate(date1.getDate()+1)).format()));
+          
+              
+        }
+
+        console.log(data);
+
+        this.setState({
+          eventArray:data
+        });
+
       }
     
       handleDayChange = date => {
@@ -134,6 +284,7 @@ class EventCalendar extends Component{
       }
 
       onDaysStartTimeChange=(value)=>{
+        console.log(value);
         this.setState({
           daysStartTime:value
         });
@@ -167,6 +318,168 @@ class EventCalendar extends Component{
         this.setState({
          endEnabled:!this.state.endEnabled
         });
+      }
+
+      convertTime=(time12h)=>{
+        const [time, modifier] = time12h.split(' ');
+
+          let [hours, minutes] = time.split(':');
+
+          if (hours === '12') {
+            hours = '00';
+          }
+
+          if (modifier === 'PM') {
+            hours = parseInt(hours, 10) + 12;
+          }
+
+          return `${hours}:${minutes}`;
+      }
+
+
+      columnGenerate=(time)=>{
+        let T=this.convertTime(time);
+
+        const DataT=this.state.selectedDays.map((item,index)=>{
+
+          let selectedDate=new Date(item).getDate();
+
+          if(this.state.endEnabled)
+          {
+                if(index===0 || index===6)
+                {
+                  if(T<this.state.endStartTime || T>this.state.endEndTime)
+                  {
+                    return (
+                      <td key={index} className="blank" style={{backgroundColor:'white'}}></td>
+                    )
+                  }
+                  else
+                  {
+                    if(this.state.eventArray.length()>0)
+                    {
+                      this.state.eventArray.forEach((element,index)=>{
+                        let date=new Date(element[0].start.dateTime).getDate();
+
+                        if(date===selectedDate)
+                        {
+                          element.forEach((ele,i)=>{
+                            let startTime=`${new Date(ele.start.dateTime).getHours()}:${new Date(ele.start.dateTime).getMinutes()}`;
+                            let endTime=`${new Date(ele.end.dateTime).getHours()}:${new Date(ele.end.dateTime).getMinutes()}`;
+
+                            if(T>=startTime && T<=endTime)
+                            {
+                              return (
+                                <td key={index} className="blank" style={{backgroundColor:'orange'}}>
+                               <p> {startTime}-{endTime}</p>
+                               <p> {ele.summary} </p>
+                                </td>
+                              )
+                            }
+                            else
+                            {
+                              return (
+                                <td key={index} className="blank" style={{backgroundColor:'grey'}}>
+                                <p>Available</p>
+                                </td>
+                              )
+                            }
+                          })
+                        }
+
+                      })
+                    }
+                    else
+                    {
+                      return (
+                        <td key={index} className="blank" style={{backgroundColor:'grey'}}>
+                        <p>Available</p>
+                        </td>
+                      )
+                    }
+                  }
+                }
+          }
+          else if(this.state.daysEnabled)
+          {
+            if(T<this.state.daysStartTime || T>this.state.daysEndTime)
+            {
+             return (
+               <td id={index} key={index} className="blank" style={{backgroundColor:'white'}}></td>
+             )
+            }
+     
+            else
+            {
+              if(this.state.eventArray.length>0)
+                    {
+                      this.state.eventArray.forEach((element,index)=>{
+                        if(element.length>0)
+                        {
+                          let date=new Date(element[0].start.dateTime).getDate();
+                        
+  
+                          if(date===selectedDate)
+                          {
+                            console.log('matched');
+                            element.forEach((ele,i)=>{
+                              let startTime=`${new Date(ele.start.dateTime).getHours()}:${new Date(ele.start.dateTime).getMinutes()}`;
+                              let endTime=`${new Date(ele.end.dateTime).getHours()}:${new Date(ele.end.dateTime).getMinutes()}`;
+                              console.log(startTime);
+                              console.log(endTime);
+                              console.log('selectedTime',T);
+                              if(T>=startTime && T<=endTime)
+                              {
+                                console.log('Should return');
+                                return (
+                                  <td key={index} className="blank" style={{backgroundColor:'orange'}}>
+                                 <p> {startTime}-{endTime}</p>
+                                 <p> {ele.summary} </p>
+                                  </td>
+                                )
+                              }
+                              else
+                              {
+                                return (
+                                  <td key={index} className="blank" style={{backgroundColor:'grey'}}>
+                                  <p>Available</p>
+                                  </td>
+                                )
+                              }
+                            })
+                          }
+                        }
+
+                        else
+                              {
+                                return (
+                                  <td key={index} className="blank" style={{backgroundColor:'grey'}}>
+                                  <p>Available</p>
+                                  </td>
+                                )
+                              }
+                       
+
+                      })
+                    }
+                    else
+                    {
+                      return (
+                        <td key={index} className="blank" style={{backgroundColor:'grey'}}>
+                        <p>Available</p>
+                        </td>
+                      )
+                    }
+            }
+          }
+
+       
+         
+          
+        })
+
+        return DataT;
+
       }
 
 
@@ -204,25 +517,40 @@ class EventCalendar extends Component{
 
     });
 
-   const DataT=this.state.selectedDays.map((item,index)=>{
-     return (
-      <td key={index} className="blankCol"></td>
-     )
-   })
+   
 
     const generateTable=TimeText.map((item,index)=>{
 
+
       return (
         
-        <tr key={index}>
+        <tr id={index} key={index}>
         <th scope="row">
           {item}
         </th>
-        {DataT}
+        
+        {this.columnGenerate(item)}
 
       </tr>
       )
-    })
+    });
+    if(!this.state.isLoggedIn)
+      return (
+        <div className="main">
+        <div className="container" style={{height:"100%"}}>
+            <div className="row syncbtn">
+                <Button id="sign" color="success" onClick={()=>this.handleAuthClick()}>
+                    Sync Google Calendar
+                </Button>
+                <Button onClick={()=>this.getEvent()}>
+                </Button>
+            </div>
+        </div>
+    </div>
+        
+      )
+
+      else
         return (
             <React.Fragment>
             <div className="bg-img1">

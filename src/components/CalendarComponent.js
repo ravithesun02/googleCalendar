@@ -4,7 +4,7 @@ import moment from 'moment';
 import DayPicker from 'react-day-picker';
 import 'react-day-picker/lib/style.css';
 import '../css/Event.css';
-import { Card, CardBody, Button, Popover,ButtonGroup, Badge, Table } from 'reactstrap';
+import { Card, CardBody, Button, Popover,ButtonGroup, Badge, Table, UncontrolledTooltip } from 'reactstrap';
 import TimePicker from 'react-time-picker';
 import Secret from '../config.json';
 import '../css/Sign.css';
@@ -96,7 +96,8 @@ class EventCalendar extends Component{
         endEnabled:false,
         utc:'GMT+2',
         isLoggedIn:false,
-        eventArray:[]
+        eventArray:[],
+        selectedDateIndex:0,
       };
 
       insertGapi()
@@ -166,6 +167,20 @@ class EventCalendar extends Component{
         this.setState({
           utc:this.state.selectedDays.toString().split(' ')[5]
         });
+
+        this.state.selectedDays.forEach((item,index)=>{
+
+          console.log(new Date().getDate());
+          console.log(new Date(item).getDate());
+          if(new Date().getDate()=== new Date(item).getDate())
+          {
+            this.setState({
+              selectedDateIndex:index
+            });
+          }
+        });
+
+       // this.generateEvevntColumn('5345');
 
         console.log(new Date(TimeText[0]).getTime());
       }
@@ -336,150 +351,103 @@ class EventCalendar extends Component{
           return `${hours}:${minutes}`;
       }
 
+      
 
-      columnGenerate=(time)=>{
+
+
+
+
+      generateEvevntColumn1=(time)=>{
         let T=this.convertTime(time);
 
         const DataT=this.state.selectedDays.map((item,index)=>{
 
-          let selectedDate=new Date(item).getDate();
-
-          if(this.state.endEnabled)
+          if(!this.state.endEnabled)
           {
-                if(index===0 || index===6)
-                {
-                  if(T<this.state.endStartTime || T>this.state.endEndTime)
-                  {
-                    return (
-                      <td key={index} className="blank" style={{backgroundColor:'white'}}></td>
-                    )
-                  }
-                  else
-                  {
-                    if(this.state.eventArray.length()>0)
-                    {
-                      this.state.eventArray.forEach((element,index)=>{
-                        let date=new Date(element[0].start.dateTime).getDate();
-
-                        if(date===selectedDate)
-                        {
-                          element.forEach((ele,i)=>{
-                            let startTime=`${new Date(ele.start.dateTime).getHours()}:${new Date(ele.start.dateTime).getMinutes()}`;
-                            let endTime=`${new Date(ele.end.dateTime).getHours()}:${new Date(ele.end.dateTime).getMinutes()}`;
-
-                            if(T>=startTime && T<=endTime)
-                            {
-                              return (
-                                <td key={index} className="blank" style={{backgroundColor:'orange'}}>
-                               <p> {startTime}-{endTime}</p>
-                               <p> {ele.summary} </p>
-                                </td>
-                              )
-                            }
-                            else
-                            {
-                              return (
-                                <td key={index} className="blank" style={{backgroundColor:'grey'}}>
-                                <p>Available</p>
-                                </td>
-                              )
-                            }
-                          })
-                        }
-
-                      })
-                    }
-                    else
-                    {
-                      return (
-                        <td key={index} className="blank" style={{backgroundColor:'grey'}}>
-                        <p>Available</p>
-                        </td>
-                      )
-                    }
-                  }
-                }
-          }
-          else if(this.state.daysEnabled)
-          {
-            if(T<this.state.daysStartTime || T>this.state.daysEndTime)
+            if(index===0 || index===6)
             {
-             return (
-               <td id={index} key={index} className="blank" style={{backgroundColor:'white'}}></td>
-             )
-            }
-     
-            else
-            {
-              if(this.state.eventArray.length>0)
-                    {
-                      this.state.eventArray.forEach((element,index)=>{
-                        if(element.length>0)
-                        {
-                          let date=new Date(element[0].start.dateTime).getDate();
+              return(
+                <td className={this.state.selectedDateIndex === index ? 'today':''} style={{backgroundColor:'white'}}>
                         
-  
-                          if(date===selectedDate)
-                          {
-                            console.log('matched');
-                            element.forEach((ele,i)=>{
-                              let startTime=`${new Date(ele.start.dateTime).getHours()}:${new Date(ele.start.dateTime).getMinutes()}`;
-                              let endTime=`${new Date(ele.end.dateTime).getHours()}:${new Date(ele.end.dateTime).getMinutes()}`;
-                              console.log(startTime);
-                              console.log(endTime);
-                              console.log('selectedTime',T);
-                              if(T>=startTime && T<=endTime)
-                              {
-                                console.log('Should return');
-                                return (
-                                  <td key={index} className="blank" style={{backgroundColor:'orange'}}>
-                                 <p> {startTime}-{endTime}</p>
-                                 <p> {ele.summary} </p>
-                                  </td>
-                                )
-                              }
-                              else
-                              {
-                                return (
-                                  <td key={index} className="blank" style={{backgroundColor:'grey'}}>
-                                  <p>Available</p>
-                                  </td>
-                                )
-                              }
-                            })
-                          }
-                        }
+                       </td>
+              )
+            }
+          }
+           if(!this.state.daysEnabled)
+           {
+             if(index>0 && index<6)
+             {
+              return(
+                <td className={this.state.selectedDateIndex === index ? 'today':''} style={{backgroundColor:'white'}}>
+                        
+                       </td>
+              )
+             }
+           }
 
-                        else
-                              {
-                                return (
-                                  <td key={index} className="blank" style={{backgroundColor:'grey'}}>
-                                  <p>Available</p>
-                                  </td>
-                                )
-                              }
-                       
 
-                      })
-                    }
-                    else
-                    {
-                      return (
-                        <td key={index} className="blank" style={{backgroundColor:'grey'}}>
-                        <p>Available</p>
-                        </td>
-                      )
-                    }
+          if((T<this.state.daysStartTime || T>this.state.daysEndTime) && this.state.daysEnabled && index>0 && index<6)
+          {
+            return(
+              <td className={this.state.selectedDateIndex === index ? 'today':''} style={{backgroundColor:'white'}}>
+                      
+                     </td>
+            )
+          }
+
+          if((T<this.state.endStartTime || T>this.state.endEndTime ) && this.state.endEnabled &&(index===0 || index===6))
+          {
+            return(
+              <td className={this.state.selectedDateIndex === index ? 'today':''} style={{backgroundColor:'white'}}>
+                      
+                     </td>
+            )
+          }
+
+
+          for(let i=0;i<this.state.eventArray.length;i++)
+          {
+            let event=this.state.eventArray[i];
+            for(let j=0;j<event.length;j++)
+            {
+              let startTime=`${new Date(event[j].start.dateTime).getHours()}:${new Date(event[j].start.dateTime).getMinutes()}`;
+              let endTime=`${new Date(event[j].end.dateTime).getHours()}:${new Date(event[j].end.dateTime).getMinutes()}`;
+                 if(T>=startTime && T<=endTime)
+                 {
+
+                   let date=new Date(event[j].start.dateTime).getDate();
+
+                   if(date===new Date(item).getDate())
+                   {
+                    // console.log(event[j]);
+                     return (
+                      <td key={index} id={`uncontrolled-${j}-${i}`} className={this.state.selectedDateIndex === index ? 'today':''} style={{backgroundColor:'#e1e1e1'}}>
+                      <UncontrolledTooltip placement="left" target={`uncontrolled-${j}-${i}`}>
+                      <p> {startTime}-{endTime}</p>
+                      <p> {event[j].summary} </p>
+                      </UncontrolledTooltip>
+                       </td>
+                     )
+                   }
+                   else if(date!==new Date(item).getDate()){
+                    continue;
+                  } 
+                 }
+                else
+                {
+                  continue;
+                }
+                             
             }
           }
 
-       
-         
-          
-        })
-
+          return (
+            <td key={index} id={`uncontrolled-${index}`} className={this.state.selectedDateIndex === index ? 'today':''} style={{backgroundColor:'#FAB83B'}}> 
+           </td>
+          )
+        });
+       // console.log(DataT);
         return DataT;
-
       }
 
 
@@ -503,12 +471,11 @@ class EventCalendar extends Component{
 
     const dateHeader=this.state.selectedDays.map((item,index)=>{
 
-      let month=item.getMonth();
-
+      let month=new Date(item).getMonth()+1;
       let dateArray=item.toString().split(' ');
 
       return (
-        <th key={index}>
+        <th key={index} className={this.state.selectedDateIndex===index ? 'today1':''}>
           {dateArray[2]} / {month} {dateArray[0]}
         </th>
 
@@ -516,6 +483,9 @@ class EventCalendar extends Component{
 
 
     });
+
+
+
 
    
 
@@ -529,7 +499,7 @@ class EventCalendar extends Component{
           {item}
         </th>
         
-        {this.columnGenerate(item)}
+        {this.generateEvevntColumn1(item)}
 
       </tr>
       )
@@ -564,7 +534,8 @@ class EventCalendar extends Component{
                     </div>
                     <div className="row">
                         <div className="col-md-12 times">
-                        <Clock format={'Mo MMMM,YYYY'} timezone={'Asia/Kolkata'}/>
+                        <Clock format={'Do MMMM,YYYY'} ticking={true} timezone={'Asia/Kolkata'}/>
+                        
                         </div>
                     </div>
                     <div className="row">
@@ -680,10 +651,23 @@ class EventCalendar extends Component{
             </div>
 
             </div>
+            <div className="p-3" style={{backgroundColor:'#F6F6F6'}}>
+              <div className="container">
+                <div className="row">
+                  <div className="col-md-12 d-flex justify-content-center align-items-center p-3">
+                    <div className="orange mr-2"></div>
+                    <span style={{fontSize:'small'}}>Available</span>
+                    <div className="grey ml-2 mr-2"></div>
+                    <span style={{fontSize:'small'}}>Busy (Hover over it to get details) </span>
+                  </div>
+                </div>
+              </div>
+            
+            </div>
           <div style={{backgroundColor:'#F6F6F6'}}>
             <div className="container">
               <div className="app-calendar">
-                  <Table bordered responsive>
+                  <Table bordered responsive className="table-body">
                     <thead>
                       <tr>
                         <th>
@@ -692,7 +676,7 @@ class EventCalendar extends Component{
                         {dateHeader}
                       </tr>
                     </thead>
-                    <tbody>
+                    <tbody >
                       {generateTable}
                     </tbody>
                   </Table>

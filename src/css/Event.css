@@ -78,3 +78,42 @@
   .weekdays{
     font-size: larger;
   }
+  .table-body tr td{
+    width: 2%;
+    height: 1%;
+  }
+  .table-body tr th{
+    width: 0.5%;
+    height: 1%;
+    font-weight: 400;
+    font-size: small;
+    padding: 1%;
+  }
+
+  .today{
+    border-left: 2px solid blue !important;
+    border-right: 2px solid blue !important;;
+
+  }
+
+  .today1{
+    border-left: 2px solid blue !important;
+    border-right: 2px solid blue !important;
+    border-top: 2px solid blue !important;
+    border-top-left-radius: 10px;
+    border-top-right-radius: 10px;
+
+  }
+
+  .orange{
+    width: 20px;
+    height: 20px;
+    border-radius: 10px;
+    background-color: #FAB83B;
+  }
+  .grey{
+    width: 20px;
+    height: 20px;
+    border-radius: 10px;
+    background-color: #e1e1e1;
+  }

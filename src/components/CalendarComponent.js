@@ -512,8 +512,6 @@ class EventCalendar extends Component{
                 <Button id="sign" color="success" onClick={()=>this.handleAuthClick()}>
                     Sync Google Calendar
                 </Button>
-                <Button onClick={()=>this.getEvent()}>
-                </Button>
             </div>
         </div>
     </div>
